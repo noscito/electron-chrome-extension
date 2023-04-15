@@ -75,11 +75,13 @@ function BrowserWindowProxy(ipcRenderer, guestId) {
 }
 
 module.exports = (win, ipcRenderer, guestInstanceId, openerId, nonNativeWinOpenForEmptyUrl = false) => {
-  Object.defineProperty(win.navigator, 'userAgent', {
-    value: win.navigator.userAgent.replace(/Electron\/\S*\s/, ''),
-    configurable: false,
-    writable: false,
-  });
+
+  // vk: win.navigator.userAgent is missing
+  // Object.defineProperty(win.navigator, 'userAgent', {
+  //   value: win.navigator.userAgent.replace(/Electron\/\S*\s/, ''),
+  //   configurable: false,
+  //   writable: false,
+  // });
 
   const originalWinOpen = win.open;
 
@@ -104,16 +106,19 @@ module.exports = (win, ipcRenderer, guestInstanceId, openerId, nonNativeWinOpenF
       win.opener = getOrCreateProxy(ipcRenderer, openerId);
     }
 
-    // This next code block polyfills Mixmax event forwarding
-    // between the opened window and the iframe's event listener.
-    // Electron loses event references between the content-scripts
-    // and the iframe.
-    // We manually trigger the intented effect.
-    win.addEventListener('message', (event) => {
-      if (event.data && event.data.method === 'loginFinished') {
-        win.location.reload();
-      }
-    })
+    // vk: now it raises "TypeError: win.addEventListener is not a function"
+    //     it is necessary to fix it later
+    //
+    // // This next code block polyfills Mixmax event forwarding
+    // // between the opened window and the iframe's event listener.
+    // // Electron loses event references between the content-scripts
+    // // and the iframe.
+    // // We manually trigger the intented effect.
+    // win.addEventListener('message', (event) => {
+    //   if (event.data && event.data.method === 'loginFinished') {
+    //     win.location.reload();
+    //   }
+    // })
   }
 
 

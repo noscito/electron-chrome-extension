@@ -1,7 +1,6 @@
 const { app, ipcMain, webContents } = require('electron')
-const { getAllWebContents } = process.electronBinding('web_contents')
+const { getAllWebContents } = process._linkedBinding('electron_browser_web_contents')
 const ChromeAPIHandler = require('./handlers');
-
 const { Buffer } = require('buffer')
 const fs = require('fs')
 const path = require('path')
@@ -91,9 +90,7 @@ const startBackgroundPages = function (manifest) {
     html = fs.readFileSync(path.join(manifest.srcDirectory, manifest.background.page))
   } else {
     name = '_generated_background_page.html'
-    const scripts = manifest.background.scripts.map((name) => {
-      return `<script src="${name}"></script>`
-    }).join('')
+    const scripts = `<script src="${manifest.background.service_worker}"></script>`;
     html = Buffer.from(`<html><body>${scripts}</body></html>`)
   }
 
@@ -130,7 +127,7 @@ const removeBackgroundPages = function (manifest) {
 const sendToBackgroundPages = function (...args) {
   for (const page of Object.values(backgroundPages)) {
     if (!page.webContents.isDestroyed()) {
-      page.webContents.sendToAll(...args)
+      page.webContents.send(...args)
     }
   }
 }
@@ -203,9 +200,9 @@ ipcMain.on(constants.RUNTIME_CONNECT, function (event, extensionId, connectInfo,
 
   event.sender.once('render-view-deleted', () => {
     if (page.webContents.isDestroyed()) return
-    page.webContents.sendToAll(`${constants.PORT_DISCONNECT_}${portId}`)
+    page.webContents.send(`${constants.PORT_DISCONNECT_}${portId}`)
   })
-  page.webContents.sendToAll(`${constants.RUNTIME_ONCONNECT_}${extensionId}`, event.sender.id, portId, connectInfo, url)
+  page.webContents.send(`${constants.RUNTIME_ONCONNECT_}${extensionId}`, event.sender.id, portId, connectInfo, url)
 })
 
 ipcMain.on(constants.I18N_MANIFEST, function (event, extensionId) {
@@ -220,7 +217,7 @@ ipcMain.on(constants.RUNTIME_SEND_MESSAGE, function (contentScriptEvent, extensi
     return
   }
 
-  page.webContents.sendToAll(`${constants.RUNTIME_ONMESSAGE_}${extensionId}`, contentScriptEvent.sender.id, message, resultID)
+  page.webContents.send(`${constants.RUNTIME_ONMESSAGE_}${extensionId}`, contentScriptEvent.sender.id, message, resultID)
   ipcMain.once(`${constants.RUNTIME_ONMESSAGE_RESULT_}${resultID}`, (backgroundPageEvent, result) => {
     contentScriptEvent.sender.send(`${constants.RUNTIME_SENDMESSAGE_RESULT_}${originResultID}`, result)
   })
@@ -236,7 +233,7 @@ ipcMain.on(constants.TABS_SEND_MESSAGE, function (event, tabId, extensionId, isB
 
   const senderTabId = isBackgroundPage ? null : event.sender.id
 
-  contents.sendToAll(`${constants.RUNTIME_ONMESSAGE_}${extensionId}`, senderTabId, message, resultID)
+  contents.send(`${constants.RUNTIME_ONMESSAGE_}${extensionId}`, senderTabId, message, resultID)
   ipcMain.once(`${constants.RUNTIME_ONMESSAGE_RESULT_}${resultID}`, (eventResult, result) => {
     eventResult.sender.send(`${constants.TABS_SEND_MESSAGE_RESULT_}${originResultID}`, result)
   })
@@ -439,13 +436,20 @@ const loadDevToolsExtensions = function (win, manifests) {
   manifests.forEach(loadExtension)
 
   const extensionInfoArray = manifests.map(manifestToExtensionInfo)
-  extensionInfoArray.forEach((extension) => {
-    win.devToolsWebContents._grantOriginAccess(extension.startPage)
-  })
-  // ref: https://github.com/electron/electron/blob/cdff1bde22f99f99c2273c2dea3b7a4a3adea09d/lib/browser/chrome-extension.js#L392
-  extensionInfoArray.forEach((extensionInfo) => {
-    win.devToolsWebContents.executeJavaScript(`Extensions.extensionServer._addExtension(${JSON.stringify(extensionInfo)})`)
-  })
+
+  // vk: _grantOriginAccess was removed as unused.
+  //     should we do something else instead?
+  //     ref: https://github.com/electron/electron/pull/29976
+  // extensionInfoArray.forEach((extension) => {
+  //   win.devToolsWebContents._grantOriginAccess(extension.startPage)
+  // })
+
+  // vk: it doesn't work now
+  //     the ref link is deprecated
+  // // ref: https://github.com/electron/electron/blob/cdff1bde22f99f99c2273c2dea3b7a4a3adea09d/lib/browser/chrome-extension.js#L392
+  // extensionInfoArray.forEach((extensionInfo) => {
+  //   win.devToolsWebContents.executeJavaScript(`Extensions.extensionServer._addExtension(${JSON.stringify(extensionInfo)})`)
+  // })
 }
 
 app.on('web-contents-created', function (event, webContents) {
