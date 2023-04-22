@@ -1,12 +1,12 @@
 import { app, webContents } from 'electron';
 import enhanceWebRequest from 'electron-better-web-request';
 // @ts-ignore
-import recursivelyLowercaseJSONKeys from 'recursive-lowercase-json';
+// import recursivelyLowercaseJSONKeys from 'recursive-lowercase-json';
 // @ts-ignore
 import parse from 'content-security-policy-parser';
 
 import { Protocol } from '../../common';
-import { fromEntries } from '../../common/utils';
+// import { fromEntries } from '../../common/utils';
 
 /**
  * Convert object of policies into content security policy heder value
@@ -30,20 +30,46 @@ const stringify = (policies: { [name: string]: string[] }): string =>
     )
     .join(';');
 
-const requestIsXhrOrSubframe = (details: any) => {
-  const { resourcetype } = details;
+function getHeaderName(headerName: string, headers?: Record<string, string>): string | undefined {
+  if (headers) {
+    const lowCaseHeader = headerName.toLowerCase();
+    for (const key in headers) {
+      if (key.toLowerCase() === lowCaseHeader) {
+        return key;
+      }
+    }
+  }
+  return undefined;
+}
 
-  const isXhr = resourcetype === 'xhr';
-  const isSubframe = resourcetype === 'subFrame';
+function getHeader(headerName: string, headers?: Record<string, any>): any {
+  const realHeaderName = getHeaderName(headerName, headers);
+  return headers && realHeaderName ? headers[realHeaderName] : undefined;
+}
+
+function setHeader(headerName: string, headerValue: any, headers?: Record<string, any>) {
+  if (headers) {
+    const realHeaderName = getHeaderName(headerName, headers);
+    return {
+      ...headers,
+      [realHeaderName ? realHeaderName : headerName]: headerValue,
+    };
+  }
+  return headers;
+}
+
+const requestIsXhrOrSubframe = (details: Electron.OnBeforeSendHeadersListenerDetails | Electron.OnHeadersReceivedListenerDetails) => {
+  const { resourceType } = details;
+
+  const isXhr = resourceType === 'xhr';
+  const isSubframe = resourceType === 'subFrame';
 
   return isXhr || isSubframe;
 };
 
-const requestHasExtensionOrigin = (details: any) => {
-  const { requestHeaders, requestheaders } = details;
-
-  const origin = (requestHeaders && requestHeaders.origin) || (requestheaders && requestheaders.origin);
-
+const requestHasExtensionOrigin = (details: Electron.OnBeforeSendHeadersListenerDetails) => {
+  const { requestHeaders } = details;
+  const origin = getHeader('origin', requestHeaders);
   if (origin) {
     return origin.startsWith(Protocol.Extension);
   }
@@ -51,11 +77,11 @@ const requestHasExtensionOrigin = (details: any) => {
   return false;
 };
 
-const requestIsFromBackgroundPage = (details: any): boolean => {
-  const { webcontentsid } = details;
+const requestIsFromBackgroundPage = (details: Electron.OnBeforeSendHeadersListenerDetails): boolean => {
+  const { webContentsId } = details;
 
-  if (webcontentsid) {
-    const wc = webContents.fromId(webcontentsid);
+  if (webContentsId) {
+    const wc = webContents.fromId(webContentsId);
 
     if (wc) {
       return wc.getURL().startsWith(Protocol.Extension);
@@ -67,13 +93,12 @@ const requestIsFromBackgroundPage = (details: any): boolean => {
   return false;
 };
 
-const requestIsOption = (details: any) => {
+const requestIsOption = (details: Electron.OnBeforeSendHeadersListenerDetails) => {
   const { method } = details;
-
   return method === 'OPTIONS';
 };
 
-const requestIsForExtension = (details: any) =>
+const requestIsForExtension = (details: Electron.OnBeforeSendHeadersListenerDetails) =>
   requestHasExtensionOrigin(details) && requestIsXhrOrSubframe(details);
 
 const requestsOrigins = new Map<string, string>();
@@ -85,27 +110,49 @@ app.on(
 
     session.webRequest.onBeforeSendHeaders(
       // @ts-ignore
-      (details: any, callback: Function) => {
-        const formattedDetails = recursivelyLowercaseJSONKeys(details);
-        const { id, requestheaders } = formattedDetails;
+      (details: Electron.OnBeforeSendHeadersListenerDetails, callback: Function) => {
+        const { id, requestHeaders } = details;
 
-        requestsOrigins.set(id, requestheaders.origin);
+// console.log(`ZZZZZZ ${JSON.stringify(details.requestHeaders)}`);
+// console.log(`XXXXXX ${JSON.stringify(setHeader('user-agent', 'electron-fetch/1.0', details.requestHeaders))}`);
 
-        if (!requestIsFromBackgroundPage(formattedDetails) && requestIsForExtension(formattedDetails)
-          && !requestIsOption(formattedDetails)) {
+        requestsOrigins.set('' + id, getHeader('origin', requestHeaders));
+
+        if (!requestIsFromBackgroundPage(details)
+            && requestIsForExtension(details)
+            && !requestIsOption(details)) {
           return callback({
             cancel: false,
-            requestHeaders: {
-              ...formattedDetails.requestheaders,
-              origin: ['null'],
-            },
+            requestHeaders: setHeader('origin', 'null', details.requestHeaders),
           });
         }
 
         callback({
           cancel: false,
-          requestHeaders: formattedDetails.requestheaders,
+          requestHeaders: details.requestHeaders,
         });
+
+        // vk:
+        // const formattedDetails = recursivelyLowercaseJSONKeys(details);
+        // const { id, requestheaders } = formattedDetails;
+
+        // requestsOrigins.set(id, requestheaders.origin);
+
+        // if (!requestIsFromBackgroundPage(formattedDetails) && requestIsForExtension(formattedDetails)
+        //   && !requestIsOption(formattedDetails)) {
+        //   return callback({
+        //     cancel: false,
+        //     requestHeaders: {
+        //       ...formattedDetails.requestheaders,
+        //       origin: ['null'],
+        //     },
+        //   });
+        // }
+
+        // callback({
+        //   cancel: false,
+        //   requestHeaders: formattedDetails.requestheaders,
+        // });
       },
       {
         origin: 'ecx-cors',
@@ -114,11 +161,15 @@ app.on(
 
     session.webRequest.onHeadersReceived(
       // @ts-ignore
-      (details: any, callback: Function) => {
-        const formattedDetails = recursivelyLowercaseJSONKeys(details);
-        const { id, responseheaders } = formattedDetails;
+      (details: Electron.OnHeadersReceivedListenerDetails, callback: Function) => {
+        const { id } = details;
+        let { responseHeaders } = details;
 
-        const headers = new Map<string, string[]>(Object.entries(responseheaders));
+        // vk:
+        // const formattedDetails = recursivelyLowercaseJSONKeys(details);
+        // const { id, responseheaders } = formattedDetails;
+
+        // const headers = new Map<string, string[]>(Object.entries(responseheaders));
 
         // Override Content Security Policy Header
         //
@@ -151,7 +202,7 @@ app.on(
 
         const cspHeaderKey = 'content-security-policy';
         const cspPolicyKey = 'frame-src';
-        const cspDirective: string = (responseheaders[cspHeaderKey] || [])[0];
+        const cspDirective: string = (getHeader(cspHeaderKey, responseHeaders) || [])[0];
 
         if (cspDirective) {
           const policies = parse(cspDirective);
@@ -163,12 +214,12 @@ app.on(
               [cspPolicyKey]: [...frameSrcPolicy, Protocol.Extension],
             };
 
-            headers.set(cspHeaderKey, [stringify(policiesWithOverride)]);
+            responseHeaders = setHeader(cspHeaderKey, [stringify(policiesWithOverride)], responseHeaders);
           }
         }
         // End override CSP iframe-src policy
 
-        const accessControlAllowOrigin = responseheaders['access-control-allow-origin'] || [];
+        const accessControlAllowOrigin = getHeader('access-control-allow-origin', responseHeaders) || [];
         const allowedOriginIsWildcard = accessControlAllowOrigin.includes('*');
 
         // Code block for bypass preflight CORS check like Wavebox is doing it
@@ -180,19 +231,19 @@ app.on(
         // https://cs.chromium.org/chromium/src/extensions/common/cors_util.h?rcl=faf5cf5cb5985875dedd065d852b35a027e50914&l=21
         // https://github.com/wavebox/waveboxapp/blob/09f791314e1ecc808cbbf919ac65e5f6dda785bd/src/app/src/Extensions/Chrome/CRExtensionRuntime/CRExtensionBackgroundPage.js#L195
         // todo(hugo): find a better and understandable solution
-        if (requestIsForExtension(formattedDetails)
-          || allowedOriginIsWildcard) {
-          headers.set('access-control-allow-credentials', ['true']);
-          headers.set('access-control-allow-origin', ['*']);
+        //    if (requestIsForExtension(details) || allowedOriginIsWildcard) {
+        if (requestIsXhrOrSubframe(details) || allowedOriginIsWildcard) {
+          responseHeaders = setHeader('access-control-allow-credentials', ['true'], responseHeaders);
+          responseHeaders = setHeader('access-control-allow-origin', ['*'], responseHeaders);
         } else {
-          headers.set('access-control-allow-credentials', ['true']);
+          responseHeaders = setHeader('access-control-allow-credentials', ['true'], responseHeaders);
         }
 
-        requestsOrigins.delete(id);
+        requestsOrigins.delete('' + id);
 
         callback({
           cancel: false,
-          responseHeaders: fromEntries(headers),
+          responseHeaders: responseHeaders,
         });
       },
       {

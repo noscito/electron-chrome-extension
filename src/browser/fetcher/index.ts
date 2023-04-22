@@ -26,7 +26,7 @@ const defaultConfig: IFetcherConfig = {
 };
 
 export default class Fetcher extends EventEmitter implements IFetcher {
-  private static instance: Fetcher;
+  private static instance?: Fetcher;
 
   public storager: IStorageProvider;
   public downloader: IDownloadProvider;
