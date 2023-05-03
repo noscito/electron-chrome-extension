@@ -219,25 +219,25 @@ app.on(
         }
         // End override CSP iframe-src policy
 
-        const accessControlAllowOrigin = getHeader('access-control-allow-origin', responseHeaders) || [];
-        const allowedOriginIsWildcard = accessControlAllowOrigin.includes('*');
+        // const accessControlAllowOrigin = getHeader('access-control-allow-origin', responseHeaders) || [];
+        // const allowedOriginIsWildcard = accessControlAllowOrigin.includes('*');
 
-        // Code block for bypass preflight CORS check like Wavebox is doing it
-        // `chrome-extension://` requests doesn't bypass CORS
-        // check like in Chromium
-        //
-        // refs:
-        // https://fetch.spec.whatwg.org/#cors-check
-        // https://cs.chromium.org/chromium/src/extensions/common/cors_util.h?rcl=faf5cf5cb5985875dedd065d852b35a027e50914&l=21
-        // https://github.com/wavebox/waveboxapp/blob/09f791314e1ecc808cbbf919ac65e5f6dda785bd/src/app/src/Extensions/Chrome/CRExtensionRuntime/CRExtensionBackgroundPage.js#L195
-        // todo(hugo): find a better and understandable solution
-        //    if (requestIsForExtension(details) || allowedOriginIsWildcard) {
-        if (requestIsXhrOrSubframe(details) || allowedOriginIsWildcard) {
-          responseHeaders = setHeader('access-control-allow-credentials', ['true'], responseHeaders);
-          responseHeaders = setHeader('access-control-allow-origin', ['*'], responseHeaders);
-        } else {
-          responseHeaders = setHeader('access-control-allow-credentials', ['true'], responseHeaders);
-        }
+        // // Code block for bypass preflight CORS check like Wavebox is doing it
+        // // `chrome-extension://` requests doesn't bypass CORS
+        // // check like in Chromium
+        // //
+        // // refs:
+        // // https://fetch.spec.whatwg.org/#cors-check
+        // // https://cs.chromium.org/chromium/src/extensions/common/cors_util.h?rcl=faf5cf5cb5985875dedd065d852b35a027e50914&l=21
+        // // https://github.com/wavebox/waveboxapp/blob/09f791314e1ecc808cbbf919ac65e5f6dda785bd/src/app/src/Extensions/Chrome/CRExtensionRuntime/CRExtensionBackgroundPage.js#L195
+        // // todo(hugo): find a better and understandable solution
+        // //    if (requestIsForExtension(details) || allowedOriginIsWildcard) {
+        // if (requestIsXhrOrSubframe(details) || allowedOriginIsWildcard) {
+        //   responseHeaders = setHeader('access-control-allow-credentials', ['true'], responseHeaders);
+        //   responseHeaders = setHeader('access-control-allow-origin', ['*'], responseHeaders);
+        // } else {
+        //   responseHeaders = setHeader('access-control-allow-credentials', ['true'], responseHeaders);
+        // }
 
         requestsOrigins.delete('' + id);
 
