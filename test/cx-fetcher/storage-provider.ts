@@ -1,6 +1,7 @@
-import * as assert from 'assert';
-const { join } = require('path');
-const fse = require('fs-extra');
+import assert from 'assert';
+import { join } from 'path';
+import fse from 'fs-extra';
+
 import StorageProvider from '../../src/browser/fetcher/storage-provider';
 import Location from '../../src/browser/fetcher/location';
 
@@ -26,7 +27,7 @@ describe('Default Storage Provider', () => {
       __dirname, '..', '..', 'test', 'assets', 'extensions'
     );
 
-    assert.equal(storager.extensionsFolder.path, expected);
+    assert.strictEqual(storager.extensionsFolder.path, expected);
   });
 
   it('accepts custom installation folder', () => {
@@ -37,7 +38,7 @@ describe('Default Storage Provider', () => {
       ),
     });
     const expected = 'path/to/files';
-    assert.equal(storager.extensionsFolder.path, expected);
+    assert.strictEqual(storager.extensionsFolder.path, expected);
   });
 
   describe('installing extension', () => {
@@ -62,9 +63,9 @@ describe('Default Storage Provider', () => {
 
       // Do not check the whole manifest, only the interestings parts
       // TODO : Make sure that we check the CxManifest type entirely and automaticaly
-      assert.equal(actual.location.path, expected.path);
-      assert.equal(actual.manifest.version, expected.manifest.version);
-      assert.equal(actual.manifest.update_url, expected.manifest.update_url);
+      assert.strictEqual(actual.location.path, expected.path);
+      assert.strictEqual(actual.manifest.version, expected.manifest.version);
+      assert.strictEqual(actual.manifest.update_url, expected.manifest.update_url);
     });
 
     it('extracts files in correct folder tree', async () => {
@@ -96,7 +97,7 @@ describe('Default Storage Provider', () => {
       try {
         await storager.installExtension(FAKE_DL_DESCRIPTOR);
       } catch (err) {
-        assert.equal('Cannot unzip archive', err);
+        assert.strictEqual('Cannot unzip archive', err);
         return;
       }
       assert.fail('Install should fail if archive cannot be unzipped');
@@ -116,7 +117,7 @@ describe('Default Storage Provider', () => {
       try {
         await storager.installExtension(FAKE_DL_DESCRIPTOR);
       } catch (err) {
-        assert.equal('Cannot read manifest', err);
+        assert.strictEqual('Cannot read manifest', err);
         return;
       }
       assert.fail('Install should fail if manifest cannot be read');

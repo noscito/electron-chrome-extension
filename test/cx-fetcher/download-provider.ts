@@ -1,11 +1,12 @@
-import assert = require('assert');
-const fs = require('fs').promises;
+import assert from 'assert';
 
 import DownloadProvider from '../../src/browser/fetcher/download-provider';
 
 import {
   EXAMPLE_EXTENSION_ID,
 } from './constants';
+
+const fs = require('fs').promises;
 
 describe('Default Download Provider', () => {
   describe('downloading', () => {
@@ -14,8 +15,8 @@ describe('Default Download Provider', () => {
       const dlDescriptor = await downloader.downloadById(EXAMPLE_EXTENSION_ID);
       const crxInfo = await fs.stat(dlDescriptor.location.path);
 
-      assert.equal(crxInfo.isFile(), true);
-      assert.notEqual(crxInfo.size, 0);
+      assert.strictEqual(crxInfo.isFile(), true);
+      assert.notStrictEqual(crxInfo.size, 0);
     });
   });
 

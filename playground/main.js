@@ -38,7 +38,7 @@ function createWindow() {
 app.on('ready', async () => {
   createWindow();
 
-  require('electron-process-manager').openProcessManager();
+  // require('electron-process-manager').openProcessManager();
 
   // Mixmax: ocpljaamllnldhepankaeljmeeeghnid
   // Gmelius: dheionainndbbpoacpnopgmnihkcmnkl
@@ -85,6 +85,7 @@ app.on('activate', () => {
 app.on('session-created', session => {
   const userAgent = session.getUserAgent();
   session.setUserAgent(userAgent.replace(/Electron\/\S*\s/, ''));
+  // session.setUserAgent('Chrome/87.0.4280.141'); // gmail
 
   // to make devtools work, we need this
   session.setPreloads([join(__dirname, 'lib/renderer/index.js')]);

@@ -1,4 +1,4 @@
-import * as assert from 'assert';
+import assert from 'assert';
 
 import { Window } from '../../src/common/apis/windows';
 
@@ -10,7 +10,7 @@ describe('chrome.windows', () => {
   it('API Available', () => {
     const namespace = window.chrome.windows;
 
-    assert.equal(Boolean(namespace), true);
+    assert.strictEqual(Boolean(namespace), true);
   });
 
   it('Create Window', () => {
@@ -21,7 +21,7 @@ describe('chrome.windows', () => {
     window.chrome.windows.create(
       win,
       (w: Window) => {
-        assert.notEqual(w.id, undefined);
+        assert.notStrictEqual(w.id, undefined);
       }
     );
   });
@@ -30,7 +30,7 @@ describe('chrome.windows', () => {
     window.chrome.windows.getCurrent(
       {},
       (w: Window) => {
-        assert.notEqual(w.id, undefined);
+        assert.notStrictEqual(w.id, undefined);
       }
     );
   });

@@ -1,5 +1,5 @@
-import assert = require('assert');
-import * as path from 'path';
+import assert from 'assert';
+import path from 'path';
 // import { ipcRenderer } from 'electron';
 
 import CxFetcher from '../../src/browser/fetcher';
@@ -32,7 +32,7 @@ describe('Chrome Extension Fetcher', () => {
   it('instanciates as a singleton', () => {
     const cxFetcher = new CxFetcher();
     const evilTwin = new CxFetcher();
-    assert.equal(cxFetcher, evilTwin);
+    assert.strictEqual(cxFetcher, evilTwin);
   });
 
   it('has default downloader provider', () => {
@@ -84,9 +84,9 @@ describe('Chrome Extension Fetcher', () => {
       const cxFetcher = new CxFetcher();
       const cxInfos = await cxFetcher.fetch(EXAMPLE_EXTENSION_ID);
 
-      assert.equal(cxInfos.location.path, FAKE_EXTENSION_PATH);
-      assert.equal(cxInfos.version.number, '1.0.0');
-      assert.equal(cxInfos.updateUrl, FAKE_EXTENSION_UPDATE_URL);
+      assert.strictEqual(cxInfos.location.path, FAKE_EXTENSION_PATH);
+      assert.strictEqual(cxInfos.version.number, '1.0.0');
+      assert.strictEqual(cxInfos.updateUrl, FAKE_EXTENSION_UPDATE_URL);
     });
 
     it('records the extension as a mutex while installing', async () => {
@@ -99,7 +99,7 @@ describe('Chrome Extension Fetcher', () => {
       cxFetcher.fetch(EXAMPLE_EXTENSION_ID);
 
       assert.ok(cxFetcher.hasMutex(EXAMPLE_EXTENSION_ID));
-      assert.equal(cxFetcher.getMutex(EXAMPLE_EXTENSION_ID), MutexStatus.Installing);
+      assert.strictEqual(cxFetcher.getMutex(EXAMPLE_EXTENSION_ID), MutexStatus.Installing);
     });
 
     it('does not execute if the extension is in use already (update/remove)', async () => {
@@ -114,7 +114,7 @@ describe('Chrome Extension Fetcher', () => {
         // Await the second (to catch the error);
         await cxFetcher.fetch(EXAMPLE_EXTENSION_ID);
       } catch (err) {
-        assert.equal(err.message, `Extension ${EXAMPLE_EXTENSION_ID} is already being used`);
+        assert.strictEqual(err.message, `Extension ${EXAMPLE_EXTENSION_ID} is already being used`);
         return;
       }
 
@@ -132,34 +132,26 @@ describe('Chrome Extension Fetcher', () => {
       });
       const cxFetcher = new CxFetcher({ storager });
 
-      const expectedFolder = path.join(TEST_PATH_INSTALLED, EXAMPLE_EXTENSION_ID, EXAMPLE_EXTENSION_VERSION.number);
+      const expectedFolder = path.resolve(TEST_PATH_INSTALLED, EXAMPLE_EXTENSION_ID, EXAMPLE_EXTENSION_VERSION.number);
 
       const beforeScan = cxFetcher.list();
-      assert.equal(beforeScan.size, 0);
+      assert.strictEqual(beforeScan.size, 0);
 
       await cxFetcher.scanInstalledExtensions();
 
       const afterScan = cxFetcher.list();
-      assert.equal(afterScan.size, 1);
+      assert.strictEqual(afterScan.size, 1);
 
       // It is the expected Cx
       const installedCx = afterScan.get(EXAMPLE_EXTENSION_ID);
       assert.ok(installedCx);
       if (installedCx) {
-        assert.equal(
+        assert.strictEqual(
           installedCx.version.number,
           EXAMPLE_EXTENSION_VERSION.number
         );
 
-// vk: FIXME!!!
-//        assert.equal(installedCx.location.path, expectedFolder);
-
-        if (installedCx.location.path === expectedFolder) {
-          assert.equal(installedCx.location.path, expectedFolder);
-        }
-
-
-
+        assert.strictEqual(path.resolve(installedCx.location.path), expectedFolder);
       }
     });
 
@@ -178,7 +170,7 @@ describe('Chrome Extension Fetcher', () => {
       const cxFetcher = new CxFetcher({ downloader: mockDownloader });
       cxFetcher.save(FAKE_CX_INFOS);
       const actual = await cxFetcher.checkForUpdate(FAKE_EXTENSION_ID);
-      assert.equal(actual, true);
+      assert.strictEqual(actual, true);
     });
 
     it('updates an extension', () => {

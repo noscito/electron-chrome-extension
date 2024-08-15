@@ -1,4 +1,4 @@
-import assert = require('assert');
+import assert from 'assert';
 
 import InterpreterProvider from '../../src/browser/fetcher/interpreter-provider';
 
@@ -30,7 +30,7 @@ describe('Default Interpreter Provider', () => {
       FAKE_CX_INFOS.version = { number: '1.0.0.0', parsed: [1, 0, 0, 0] };
       const actual = interpreter.shouldUpdate(FAKE_CX_INFOS, FAKE_UPDATE_DESCRIPTOR);
 
-      assert.equal(actual, true);
+      assert.strictEqual(actual, true);
     });
 
     it('is false when both versions are equal', () => {
@@ -39,7 +39,7 @@ describe('Default Interpreter Provider', () => {
       FAKE_CX_INFOS.version = { number: '1.2.0', parsed: [1, 2, 0] };
       const actual = interpreter.shouldUpdate(FAKE_CX_INFOS, FAKE_UPDATE_DESCRIPTOR);
 
-      assert.equal(actual, false);
+      assert.strictEqual(actual, false);
     });
 
     it('is false when the update version is lower than the current', () => {
@@ -48,7 +48,7 @@ describe('Default Interpreter Provider', () => {
       FAKE_CX_INFOS.version = { number: '10.2.0', parsed: [10, 2, 0] };
       const actual = interpreter.shouldUpdate(FAKE_CX_INFOS, FAKE_UPDATE_DESCRIPTOR);
 
-      assert.equal(actual, false);
+      assert.strictEqual(actual, false);
     });
   });
 
@@ -57,7 +57,7 @@ describe('Default Interpreter Provider', () => {
       const interpreter = new InterpreterProvider();
       const highest = interpreter.sortLastVersion(FAKE_VERSION_ARRAY);
 
-      assert.equal(highest.number, '2.0');
+      assert.strictEqual(highest.number, '2.0');
     });
 
     it('throw an error if array is empty', () => {

@@ -1,12 +1,9 @@
 import { app, webContents } from 'electron';
 import enhanceWebRequest from 'electron-better-web-request';
 // @ts-ignore
-// import recursivelyLowercaseJSONKeys from 'recursive-lowercase-json';
-// @ts-ignore
 import parse from 'content-security-policy-parser';
 
 import { Protocol } from '../../common';
-// import { fromEntries } from '../../common/utils';
 
 /**
  * Convert object of policies into content security policy heder value
@@ -113,9 +110,6 @@ app.on(
       (details: Electron.OnBeforeSendHeadersListenerDetails, callback: Function) => {
         const { id, requestHeaders } = details;
 
-// console.log(`ZZZZZZ ${JSON.stringify(details.requestHeaders)}`);
-// console.log(`XXXXXX ${JSON.stringify(setHeader('user-agent', 'electron-fetch/1.0', details.requestHeaders))}`);
-
         requestsOrigins.set('' + id, getHeader('origin', requestHeaders));
 
         if (!requestIsFromBackgroundPage(details)
@@ -131,28 +125,6 @@ app.on(
           cancel: false,
           requestHeaders: details.requestHeaders,
         });
-
-        // vk:
-        // const formattedDetails = recursivelyLowercaseJSONKeys(details);
-        // const { id, requestheaders } = formattedDetails;
-
-        // requestsOrigins.set(id, requestheaders.origin);
-
-        // if (!requestIsFromBackgroundPage(formattedDetails) && requestIsForExtension(formattedDetails)
-        //   && !requestIsOption(formattedDetails)) {
-        //   return callback({
-        //     cancel: false,
-        //     requestHeaders: {
-        //       ...formattedDetails.requestheaders,
-        //       origin: ['null'],
-        //     },
-        //   });
-        // }
-
-        // callback({
-        //   cancel: false,
-        //   requestHeaders: formattedDetails.requestheaders,
-        // });
       },
       {
         origin: 'ecx-cors',
@@ -164,12 +136,6 @@ app.on(
       (details: Electron.OnHeadersReceivedListenerDetails, callback: Function) => {
         const { id } = details;
         let { responseHeaders } = details;
-
-        // vk:
-        // const formattedDetails = recursivelyLowercaseJSONKeys(details);
-        // const { id, responseheaders } = formattedDetails;
-
-        // const headers = new Map<string, string[]>(Object.entries(responseheaders));
 
         // Override Content Security Policy Header
         //
@@ -218,9 +184,6 @@ app.on(
           }
         }
         // End override CSP iframe-src policy
-
-        // const accessControlAllowOrigin = getHeader('access-control-allow-origin', responseHeaders) || [];
-        // const allowedOriginIsWildcard = accessControlAllowOrigin.includes('*');
 
         // // Code block for bypass preflight CORS check like Wavebox is doing it
         // // `chrome-extension://` requests doesn't bypass CORS
